@@ -2,19 +2,22 @@ import base64
 import os
 from email.message import EmailMessage
 
+from dotenv import load_dotenv
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+load_dotenv()
+
 
 class CreateDraft:
-    SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
-    SERVICE_ACCOUNT_FILE = "credentials.json"
-    TOKEN_FILE = "token.json"
-    USER_ID = "me"
-    MY_EMAIL = "arturiermolenko@gmail.com"
+    _SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
+    _SERVICE_ACCOUNT_FILE = os.environ["SERVICE_ACCOUNT_FILE"]
+    _TOKEN_FILE = os.environ["TOKEN_FILE"]
+    _USER_ID = os.environ["USER_ID"]
+    _MY_EMAIL = os.environ["MY_EMAIL"]
 
     def __init__(self,
                  subject: str,
@@ -33,7 +36,7 @@ class CreateDraft:
         Load pre-authorized user credentials from the environment.
         """
         # creds, _ = google.auth.default()
-        creds = Credentials.from_authorized_user_file(self.TOKEN_FILE, self.SCOPES)
+        creds = Credentials.from_authorized_user_file(self._TOKEN_FILE, self._SCOPES)
 
         try:
             # create gmail api client
@@ -44,7 +47,7 @@ class CreateDraft:
             message.set_content(self.email_content)
 
             message["To"] = self.email_address
-            message["From"] = self.MY_EMAIL
+            message["From"] = self._MY_EMAIL
             message["Subject"] = self.subject
 
             # encoded message
@@ -55,7 +58,7 @@ class CreateDraft:
             draft = (
                 service.users()
                 .drafts()
-                .create(userId=self.USER_ID, body=create_message)
+                .create(userId=self._USER_ID, body=create_message)
                 .execute()
             )
 
@@ -75,25 +78,25 @@ class CreateDraft:
         # The file token.json stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
         # time.
-        if os.path.exists(self.TOKEN_FILE):
-            creds = Credentials.from_authorized_user_file(self.TOKEN_FILE, self.SCOPES)
+        if os.path.exists(self._TOKEN_FILE):
+            creds = Credentials.from_authorized_user_file(self._TOKEN_FILE, self._SCOPES)
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    self.SERVICE_ACCOUNT_FILE, self.SCOPES
+                    self._SERVICE_ACCOUNT_FILE, self._SCOPES
                 )
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open(self.TOKEN_FILE, "w") as token:
+            with open(self._TOKEN_FILE, "w") as token:
                 token.write(creds.to_json())
 
         try:
             # Call the Gmail API
             service = build("gmail", "v1", credentials=creds)
-            results = service.users().labels().list(userId=self.USER_ID).execute()
+            results = service.users().labels().list(userId=self._USER_ID).execute()
             labels = results.get("labels", [])
 
             if not labels:
@@ -108,8 +111,9 @@ class CreateDraft:
 
 
 if __name__ == "__main__":
-    CreateDraft(
+    my_draft = CreateDraft(
         subject=input("Subject:"),
         email_address=input("Address: "),
         email_content=input("Content: ")
     )
+    my_draft.gmail_create_draft()
