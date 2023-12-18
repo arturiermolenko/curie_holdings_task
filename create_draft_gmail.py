@@ -23,7 +23,6 @@ class CreateDraft:
                  subject: str,
                  email_address: str,
                  email_content: str, ):
-        self.get_or_create_token()
         self.subject = subject
         self.email_address = email_address
         self.email_content = email_content
@@ -36,7 +35,8 @@ class CreateDraft:
         Load pre-authorized user credentials from the environment.
         """
         # creds, _ = google.auth.default()
-        creds = Credentials.from_authorized_user_file(self._TOKEN_FILE, self._SCOPES)
+        # creds = Credentials.from_authorized_user_file(self._TOKEN_FILE, self._SCOPES)
+        creds = self.get_or_create_token()
 
         try:
             # create gmail api client
@@ -71,8 +71,8 @@ class CreateDraft:
         return draft
 
     def get_or_create_token(self):
-        """Shows basic usage of the Gmail API.
-        Lists the user's Gmail labels.
+        """Checking the existing of token file.
+        Creating, if it doesn't exist. Refresh, if necessary.
         """
         creds = None
         # The file token.json stores the user's access and refresh tokens, and is
@@ -92,22 +92,7 @@ class CreateDraft:
             # Save the credentials for the next run
             with open(self._TOKEN_FILE, "w") as token:
                 token.write(creds.to_json())
-
-        try:
-            # Call the Gmail API
-            service = build("gmail", "v1", credentials=creds)
-            results = service.users().labels().list(userId=self._USER_ID).execute()
-            labels = results.get("labels", [])
-
-            if not labels:
-                print("No labels found.")
-                return
-            print("Labels:")
-            for label in labels:
-                print(label["name"])
-
-        except HttpError as error:
-            print(f"An error occurred: {error}")
+        return creds
 
 
 if __name__ == "__main__":
