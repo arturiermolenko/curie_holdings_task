@@ -108,8 +108,9 @@ class CreateDraft:
 
 
 if __name__ == "__main__":
-    CreateDraft(
+    my_draft = CreateDraft(
         subject=input("Subject:"),
         email_address=input("Address: "),
         email_content=input("Content: ")
     )
+    my_draft.gmail_create_draft()
