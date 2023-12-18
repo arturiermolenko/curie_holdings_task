@@ -34,8 +34,7 @@ class CreateDraft:
 
         Load pre-authorized user credentials from the environment.
         """
-        # creds, _ = google.auth.default()
-        # creds = Credentials.from_authorized_user_file(self._TOKEN_FILE, self._SCOPES)
+
         creds = self.get_or_create_token()
 
         try:
